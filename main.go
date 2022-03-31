@@ -9,17 +9,18 @@ import (
 )
 
 func main() {
-	config := pex.Config{
-		ImagesPath:  "images.txt",
-		ResultPath:  "prevalent_colors.csv",
-		MostKColors: 3,
-	}
 	downloadedImages := make(chan pex.DownloadedImage)
 	processedImages := make(chan pex.ProcessedImage)
 	ctx, cancelFunc := context.WithCancel(context.Background())
+	const mostK = 3
+	pexChallenge := pex.Pex{
+		pex.ImagesReader{downloadedImages, "images.txt"},
+		pex.MostKColors{downloadedImages, processedImages, mostK},
+		pex.ImagesWriter{"prevalent_colors.csv", processedImages},
+	}
 	var counter int64
 	start := time.Now()
-	pex.ProcessImages(ctx, downloadedImages, processedImages, config, &counter)
+	go pexChallenge.ProcessImages(ctx, &counter)
 	wait(&counter)
 	elapsed := time.Now().Sub(start)
 	log.Printf("Processing images took %s\n", elapsed)
